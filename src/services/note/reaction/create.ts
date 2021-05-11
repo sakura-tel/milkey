@@ -11,6 +11,7 @@ import { perUserReactionsChart } from '../../chart';
 import { genId } from '../../../misc/gen-id';
 import { createNotification } from '../../create-notification';
 import deleteReaction from './delete';
+import { isDuplicateKeyValueError } from '../../../misc/is-duplicate-key-value-error';
 import { IdentifiableError } from '../../../misc/identifiable-error';
 
 export default async (user: User, note: Note, reaction?: string, isDislike = false) => {
@@ -35,8 +36,8 @@ export default async (user: User, note: Note, reaction?: string, isDislike = fal
 			// 別のリアクションがすでにされていたら置き換える
 			await deleteReaction(user, note);
 		} else {
-			// 同じリアクションがすでにされていたら何もしない
-			return;
+			// 同じリアクションがすでにされていたらエラー
+			throw new IdentifiableError('51c42bb4-931a-456b-bff7-e5a8a70dd298');
 		}
 	}
 
@@ -48,6 +49,12 @@ export default async (user: User, note: Note, reaction?: string, isDislike = fal
 		userId: user.id,
 		reaction,
 		dislike: isDislike,
+	}).catch(e => {
+		if (isDuplicateKeyValueError(e)) {
+			throw new IdentifiableError('51c42bb4-931a-456b-bff7-e5a8a70dd298');
+		} else {
+			throw e;
+		};
 	});
 
 	// Increment reactions count
