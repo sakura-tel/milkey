@@ -31,6 +31,15 @@ function initializeQueue(name: string, limitPerSec = -1) {
 	});
 }
 
+function apBackoff(attemptsMade: number, err: Error) {
+	const baseDelay = 1 * 1000;	// 1sec
+	const maxBackoff = 8 * 60 * 60 * 1000;	// 8hours
+	let backoff = (Math.pow(attemptsMade, 4) + 15) * baseDelay;
+	backoff = Math.min(backoff, maxBackoff);
+	backoff += Math.round(backoff * Math.random() * 0.2);
+	return backoff;
+}
+
 export type InboxJobData = {
 	activity: IActivity,
 	/** HTTP-Signature */
@@ -103,8 +112,7 @@ export function deliver(user: ILocalUser, content: any, to: any) {
 	return deliverQueue.add(data, {
 		attempts: config.deliverJobMaxAttempts || 12,
 		backoff: {
-			type: 'exponential',
-			delay: 60 * 1000
+			type: 'apBackoff'
 		},
 		removeOnComplete: true,
 		removeOnFail: true
@@ -120,8 +128,7 @@ export function inbox(activity: any, signature: httpSignature.IParsedSignature) 
 	return inboxQueue.add(data, {
 		attempts: config.inboxJobMaxAttempts || 8,
 		backoff: {
-			type: 'exponential',
-			delay: 60 * 1000
+			type: 'apBackoff'
 		},
 		removeOnComplete: true,
 		removeOnFail: true
