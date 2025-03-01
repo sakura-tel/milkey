@@ -3,7 +3,7 @@ import { ID } from '../../../../../misc/cafy-id';
 import define from '../../../define';
 import { ApiError } from '../../../error';
 import { getUser } from '../../../common/getters';
-import { UserGroups, UserGroupJoinings, UserGroupInvitations } from '../../../../../models';
+import { Users, UserGroups, UserGroupJoinings, UserGroupInvitations } from '../../../../../models';
 import { genId } from '../../../../../misc/gen-id';
 import { UserGroupInvitation } from '../../../../../models/entities/user-group-invitation';
 import { createNotification } from '../../../../../services/create-notification';
@@ -77,6 +77,10 @@ export default define(meta, async (ps, me) => {
 		if (e.id === '15348ddd-432d-49c2-8a5a-8069753becff') throw new ApiError(meta.errors.noSuchUser);
 		throw e;
 	});
+
+	if (Users.isRemoteUser(user)) {
+		throw new ApiError(meta.errors.noSuchUser);
+	}
 
 	const joining = await UserGroupJoinings.findOne({
 		userGroupId: userGroup.id,
