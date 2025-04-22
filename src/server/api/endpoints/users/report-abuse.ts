@@ -1,4 +1,5 @@
 import $ from 'cafy';
+import * as ms from 'ms';
 import * as sanitizeHtml from 'sanitize-html';
 import { ID } from '../../../../misc/cafy-id';
 import define from '../../define';
@@ -18,6 +19,12 @@ export const meta = {
 	tags: ['users'],
 
 	requireCredential: true as const,
+
+	limit: {
+		duration: ms('1hour'),
+		max: 10,
+		minInterval: ms('1min')
+	},
 
 	params: {
 		userId: {
