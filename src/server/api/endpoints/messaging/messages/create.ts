@@ -1,6 +1,7 @@
 import $ from 'cafy';
 import { ID } from '../../../../../misc/cafy-id';
 import define from '../../../define';
+import * as ms from 'ms';
 import { ApiError } from '../../../error';
 import { getUser } from '../../../common/getters';
 import { MessagingMessages, DriveFiles, UserGroups, UserGroupJoinings } from '../../../../../models';
@@ -19,6 +20,12 @@ export const meta = {
 	requireCredential: true as const,
 
 	kind: 'write:messaging',
+
+	limit: {
+		duration: ms('1hour'),
+		max: 500,
+		minInterval: ms('1sec')
+	},
 
 	params: {
 		userId: {
