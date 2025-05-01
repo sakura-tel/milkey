@@ -1,5 +1,5 @@
 <template>
-<component :is="self ? 'MkA' : 'a'" class="xlcxczvw _link" :[attr]="self ? url.substr(local.length) : url" :rel="rel" :target="target"
+<component :is="self ? 'MkA' : 'a'" class="xlcxczvw _link" :[attr]="maybeRelativeUrl" :rel="rel" :target="target"
 	@mouseover="onMouseover"
 	@mouseleave="onMouseleave"
 	:title="url"
@@ -14,6 +14,7 @@ import { defineComponent } from 'vue';
 import { faExternalLinkSquareAlt } from '@fortawesome/free-solid-svg-icons';
 import { url as local } from '@/config';
 import { isDeviceTouch } from '@/scripts/is-device-touch';
+import { maybeMakeRelative } from '../../prelude/url';
 import * as os from '@/os';
 
 export default defineComponent({
@@ -28,7 +29,8 @@ export default defineComponent({
 		}
 	},
 	data() {
-		const self = this.url.startsWith(local);
+		const maybeRelativeUrl = maybeMakeRelative(this.url, local);
+		const self = maybeRelativeUrl !== this.url;
 		return {
 			local,
 			self: self,
