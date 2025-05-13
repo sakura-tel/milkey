@@ -2,10 +2,11 @@ import { publishMainStream } from '../stream';
 import { renderActivity } from '../../remote/activitypub/renderer';
 import renderFollow from '../../remote/activitypub/renderer/follow';
 import renderUndo from '../../remote/activitypub/renderer/undo';
-import renderBlock from '../../remote/activitypub/renderer/block';
+import { renderBlock } from '../../remote/activitypub/renderer/block';
 import { deliver } from '../../queue';
 import renderReject from '../../remote/activitypub/renderer/reject';
 import { User } from '../../models/entities/user';
+import { Blocking } from '../../models/entities/blocking';
 import { Blockings, Users, FollowRequests, Followings } from '../../models';
 import { perUserFollowingChart } from '../chart';
 import { genId } from '../../misc/gen-id';
@@ -18,15 +19,19 @@ export default async function(blocker: User, blockee: User) {
 		unFollow(blockee, blocker)
 	]);
 
-	await Blockings.save({
+	const blocking = {
 		id: genId(),
 		createdAt: new Date(),
+		blocker,
 		blockerId: blocker.id,
+		blockee,
 		blockeeId: blockee.id,
-	});
+	} as Blocking;
+
+	await Blockings.insert(blocking);
 
 	if (Users.isLocalUser(blocker) && Users.isRemoteUser(blockee)) {
-		const content = renderActivity(renderBlock(blocker, blockee));
+		const content = renderActivity(renderBlock(blocking));
 		deliver(blocker, content, blockee.inbox);
 	}
 }

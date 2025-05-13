@@ -80,16 +80,8 @@ module.exports = async (ctx: Koa.Context) => {
 function wrap(url: string | null) {
 	if (url == null) return null;
 
-	if (url.match(/^https?:/)) {
-		return `${config.url}/proxy/preview.jpg?${query({
-			url,
-			preview: '1'
-		})}`
-	}
-
-	if (url.match(/^data:/)) {
-		return url;
-	}
-
-	return null;
+	return `${config.url}/proxy/preview.jpg?${query({
+		url,
+		preview: '1'
+	})}`
 }

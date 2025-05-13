@@ -5,11 +5,10 @@ import { Users } from '../../../models';
 export default (follower: User, followee: User, requestId?: string) => {
 	const follow = {
 		type: 'Follow',
+		id: requestId ?? `${config.url}/follows/${follower.id}/${followee.id}`,
 		actor: Users.isLocalUser(follower) ? `${config.url}/users/${follower.id}` : follower.uri,
 		object: Users.isLocalUser(followee) ? `${config.url}/users/${followee.id}` : followee.uri
 	} as any;
-
-	if (requestId) follow.id = requestId;
 
 	return follow;
 };

@@ -1,5 +1,5 @@
 import { renderActivity } from '../../remote/activitypub/renderer';
-import renderBlock from '../../remote/activitypub/renderer/block';
+import { renderBlock } from '../../remote/activitypub/renderer/block';
 import renderUndo from '../../remote/activitypub/renderer/undo';
 import { deliver } from '../../queue';
 import Logger from '../logger';
@@ -19,11 +19,16 @@ export default async function(blocker: User, blockee: User) {
 		return;
 	}
 
+	// Since we already have the blocker and blockee, we do not need to fetch
+	// them in the query above and can just manually insert them here.
+	blocking.blocker = blocker;
+	blocking.blockee = blockee;
+
 	Blockings.delete(blocking.id);
 
 	// deliver if remote bloking
 	if (Users.isLocalUser(blocker) && Users.isRemoteUser(blockee)) {
-		const content = renderActivity(renderUndo(renderBlock(blocker, blockee), blocker));
+		const content = renderActivity(renderUndo(renderBlock(blocking), blocker));
 		deliver(blocker, content, blockee.inbox);
 	}
 }

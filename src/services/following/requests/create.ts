@@ -6,6 +6,7 @@ import { User } from '../../../models/entities/user';
 import { Blockings, FollowRequests, Users } from '../../../models';
 import { genId } from '../../../misc/gen-id';
 import { createNotification } from '../../create-notification';
+import config from '../../../config';
 
 export default async function(follower: User, followee: User, requestId?: string) {
 	if (follower.id === followee.id) return;
@@ -63,7 +64,7 @@ export default async function(follower: User, followee: User, requestId?: string
 	}
 
 	if (Users.isLocalUser(follower) && Users.isRemoteUser(followee)) {
-		const content = renderActivity(renderFollow(follower, followee));
+		const content = renderActivity(renderFollow(follower, followee, requestId ?? `${config.url}/follows/${followRequest.id}`));
 		deliver(follower, content, followee.inbox);
 	}
 }

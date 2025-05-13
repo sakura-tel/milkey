@@ -14,7 +14,7 @@
 </div>
 <div v-else class="mk-url-preview" v-size="{ max: [400, 350] }">
 	<transition name="zoom" mode="out-in">
-		<component :is="self ? 'MkA' : 'a'" :class="{ compact }" :[attr]="self ? url.substr(local.length) : url" rel="nofollow noopener" :target="target" :title="url" v-if="!fetching">
+		<component :is="self ? 'MkA' : 'a'" :class="{ compact }" :[attr]="maybeRelativeUrl" rel="nofollow noopener" :target="target" :title="url" v-if="!fetching">
 			<div class="thumbnail" v-if="thumbnail" :style="`background-image: url('${thumbnail}')`">
 				<button class="_button" v-if="!playerEnabled && player.url" @click.prevent="onPreviewPlayButtonClicked" :title="$ts.enablePlayer"><Fa :icon="faPlayCircle"/></button>
 			</div>
@@ -42,7 +42,8 @@
 import { defineComponent } from 'vue';
 import { faTimes, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 import { faPlayCircle } from '@fortawesome/free-regular-svg-icons';
-import { faTwitter } from '@fortawesome/free-brands-svg-icons'; 
+import { faTwitter } from '@fortawesome/free-brands-svg-icons';
+import { maybeMakeRelative } from '../../prelude/url';
 import { url as local, lang } from '@/config';
 import * as os from '@/os';
 
@@ -67,7 +68,8 @@ export default defineComponent({
 	},
 
 	data() {
-		const self = this.url.startsWith(local);
+		const maybeRelativeUrl = maybeMakeRelative(this.url, local);
+		const self = maybeRelativeUrl !== this.url;
 		return {
 			local,
 			fetching: true,

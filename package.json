@@ -1,6 +1,6 @@
 {
 	"name": "groundpolis-milkey",
-	"version": "2022.07.03-milkey-3.3",
+	"version": "2022.07.03-milkey-3.4",
 	"private": true,
 	"author": "Xeltica <xeltica@gmail.com> , Minemu <minemu398@outlook.jp> , Azuki⪥ <cluikeit_31701@outlook.com> , Remito <remitocat@gmail.com> , atsu1125 <atsuchan@atsuchan.page>",
 	"contributors": [
@@ -174,7 +174,7 @@
 		"jsonld": "5.2.0",
 		"jsrsasign": "10.5.27",
 		"katex": "0.12.0",
-		"koa": "2.13.4",
+		"koa": "2.15.4",
 		"koa-bodyparser": "4.3.0",
 		"koa-favicon": "2.1.0",
 		"koa-json-body": "5.3.0",

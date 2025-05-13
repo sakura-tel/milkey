@@ -14,9 +14,9 @@ import Following from './activitypub/following';
 import Featured from './activitypub/featured';
 import { inbox as processInbox } from '../queue';
 import { isSelfHost } from '../misc/convert-host';
-import { Notes, Users, Emojis, UserKeypairs, NoteReactions } from '../models';
+import { Notes, Users, Emojis, UserKeypairs, NoteReactions, FollowRequests } from '../models';
 import { ILocalUser, User } from '../models/entities/user';
-import { In } from 'typeorm';
+import { In, IsNull, Not } from 'typeorm';
 import { ensure } from '../prelude/ensure';
 import { renderLike } from '../remote/activitypub/renderer/like';
 import config from '../config';
@@ -25,6 +25,7 @@ import * as crypto from 'crypto';
 import { inspect } from 'util';
 import { IActivity } from '../remote/activitypub/type';
 import { serverLogger } from '.';
+import renderFollow from '../remote/activitypub/renderer/follow';
 
 // Init router
 const router = new Router();
@@ -347,6 +348,68 @@ router.get('/likes/:like', async ctx => {
 
 	ctx.body = renderActivity(await renderLike(reaction, note));
 	ctx.set('Cache-Control', 'public, max-age=180');
+	setResponseType(ctx);
+});
+
+// follow
+router.get("/follows/:follower/:followee", async (ctx: Router.RouterContext) => {
+	if (config.disableFederation) ctx.throw(404);
+
+	// This may be used before the follow is completed, so we do not
+	// check if the following exists.
+
+	const [follower, followee] = await Promise.all([
+		Users.findOne({
+			id: ctx.params.follower,
+			host: IsNull(),
+		}),
+		Users.findOne({
+			id: ctx.params.followee,
+			host: Not(IsNull()),
+		}),
+	]);
+
+	if (follower == null || followee == null) {
+		ctx.status = 404;
+		return;
+	}
+
+	ctx.body = renderActivity(renderFollow(follower, followee));
+	ctx.set('Cache-Control', 'public, max-age=180');
+	setResponseType(ctx);
+});
+
+// follow request
+router.get("/follows/:followRequestId", async (ctx: Router.RouterContext) => {
+	if (config.disableFederation) ctx.throw(404);
+	
+	const followRequest = await FollowRequests.findOne({
+		id: ctx.params.followRequestId,
+	});
+
+	if (followRequest == null) {
+		ctx.status = 404;
+		return;
+	}
+
+	const [follower, followee] = await Promise.all([
+		Users.findOne({
+			id: followRequest.followerId,
+			host: IsNull(),
+		}),
+		Users.findOne({
+			id: followRequest.followeeId,
+			host: Not(IsNull()),
+		}),
+	]);
+
+	if (follower == null || followee == null) {
+		ctx.status = 404;
+		return;
+	}
+
+	ctx.set("Cache-Control", "public, max-age=180");
+	ctx.body = renderActivity(renderFollow(follower, followee));
 	setResponseType(ctx);
 });
 

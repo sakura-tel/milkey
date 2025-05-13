@@ -2,7 +2,7 @@ import $ from 'cafy';
 import { ID } from '../../../../misc/cafy-id';
 import define from '../../define';
 import { makePaginationQuery } from '../../common/make-pagination-query';
-import { Notes, Followings } from '../../../../models';
+import { Notes, Followings, ChannelFollowings } from '../../../../models';
 import { generateVisibilityQuery } from '../../common/generate-visibility-query';
 import { generateMutedUserQuery } from '../../common/generate-muted-user-query';
 import { activeUsersChart } from '../../../../services/chart';
@@ -118,16 +118,28 @@ export default define(meta, async (ps, user) => {
 		take: 1
 	})) !== 0;
 
+	const hasChannelFollowing = (await ChannelFollowings.count({
+		where: {
+			followerId: user.id,
+		},
+		take: 1,
+	})) !== 0;
+
 	//#region Construct query
 	const followingQuery = Followings.createQueryBuilder('following')
 		.select('following.followeeId')
 		.where('following.followerId = :followerId', { followerId: user.id });
+
+	const channelFollowingQuery = ChannelFollowings.createQueryBuilder('channelFollowing')
+		.select('channelFollowing.followeeId')
+		.where('channelFollowing.followerId = :followerId', { followerId: user.id });
 
 	const query = makePaginationQuery(Notes.createQueryBuilder('note'),
 			ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
 		.andWhere(new Brackets(qb => { qb
 			.where('note.userId = :meId', { meId: user.id });
 			if (hasFollowing) qb.orWhere(`note.userId IN (${ followingQuery.getQuery() })`);
+			if (hasChannelFollowing) qb.orWhere(`note.channelId IN (${ channelFollowingQuery.getQuery() })`);
 		}))
 		.leftJoinAndSelect('note.user', 'user')
 		.setParameters(followingQuery.getParameters());

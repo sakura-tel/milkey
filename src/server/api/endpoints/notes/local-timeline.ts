@@ -99,7 +99,7 @@ export default define(meta, async (ps, user) => {
 	//#region Construct query
 	const query = makePaginationQuery(Notes.createQueryBuilder('note'),
 			ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
-		.andWhere(`(${cond}) AND (note.userHost IS NULL)`)
+		.andWhere(`(${cond}) AND (note.userHost IS NULL) AND (note.channelId IS NULL)`)
 		.leftJoinAndSelect('note.user', 'user');
 
 	generateChannelQuery(query, user);

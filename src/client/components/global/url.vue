@@ -1,5 +1,5 @@
 <template>
-<component :is="self ? 'MkA' : 'a'" class="ieqqeuvs _link" :[attr]="self ? url.substr(local.length) : url" :rel="rel" :target="target"
+<component :is="self ? 'MkA' : 'a'" class="ieqqeuvs _link" :[attr]="maybeRelativeUrl" :rel="rel" :target="target"
 	@mouseover="onMouseover"
 	@mouseleave="onMouseleave"
 	@contextmenu.stop="() => {}"
@@ -25,6 +25,7 @@ import { faExternalLinkSquareAlt } from '@fortawesome/free-solid-svg-icons';
 import { toUnicode as decodePunycode } from 'punycode';
 import { url as local } from '@/config';
 import { isDeviceTouch } from '@/scripts/is-device-touch';
+import { maybeMakeRelative } from '../../../prelude/url';
 import * as os from '@/os';
 
 export default defineComponent({
@@ -39,7 +40,8 @@ export default defineComponent({
 		}
 	},
 	data() {
-		const self = this.url.startsWith(local);
+		const maybeRelativeUrl = maybeMakeRelative(this.url, local);
+		const self = maybeRelativeUrl !== this.url;
 		return {
 			local,
 			schema: null as string | null,
