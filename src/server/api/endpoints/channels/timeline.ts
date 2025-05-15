@@ -4,6 +4,7 @@ import define from '../../define';
 import { ApiError } from '../../error';
 import { Notes, Channels } from '../../../../models';
 import { makePaginationQuery } from '../../common/make-pagination-query';
+import { generateSuspendedUserQueryForNote } from '../../common/generate-suspended-query';
 import { activeUsersChart } from '../../../../services/chart';
 
 export const meta = {
@@ -88,7 +89,14 @@ export default define(meta, async (ps, user) => {
 	const query = makePaginationQuery(Notes.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 		.andWhere('note.channelId = :channelId', { channelId: channel.id })
 		.leftJoinAndSelect('note.user', 'user')
-		.leftJoinAndSelect('note.channel', 'channel');
+		.leftJoinAndSelect('note.channel', 'channel')
+		.leftJoinAndSelect('note.reply', 'reply')
+		.leftJoinAndSelect('note.renote', 'renote')
+		.leftJoinAndSelect('reply.user', 'replyUser')
+		.leftJoinAndSelect('renote.user', 'renoteUser');
+
+	generateSuspendedUserQueryForNote(query);
+
 	//#endregion
 
 	const timeline = await query.take(ps.limit!).getMany();

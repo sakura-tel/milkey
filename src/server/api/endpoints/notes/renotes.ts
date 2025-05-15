@@ -5,6 +5,7 @@ import { getNote } from '../../common/getters';
 import { ApiError } from '../../error';
 import { generateVisibilityQuery } from '../../common/generate-visibility-query';
 import { generateMutedUserQuery } from '../../common/generate-muted-user-query';
+import { generateSuspendedUserQueryForNote } from '../../common/generate-suspended-query';
 import { makePaginationQuery } from '../../common/make-pagination-query';
 import { Notes } from '../../../../models';
 
@@ -68,9 +69,14 @@ export default define(meta, async (ps, user) => {
 
 	const query = makePaginationQuery(Notes.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 		.andWhere(`note.renoteId = :renoteId`, { renoteId: note.id })
-		.leftJoinAndSelect('note.user', 'user');
+		.leftJoinAndSelect('note.user', 'user')
+		.leftJoinAndSelect('note.reply', 'reply')
+		.leftJoinAndSelect('note.renote', 'renote')
+		.leftJoinAndSelect('reply.user', 'replyUser')
+		.leftJoinAndSelect('renote.user', 'renoteUser');
 
 	generateVisibilityQuery(query, user);
+	generateSuspendedUserQueryForNote(query);
 	if (user) generateMutedUserQuery(query, user);
 
 	const renotes = await query.take(ps.limit!).getMany();

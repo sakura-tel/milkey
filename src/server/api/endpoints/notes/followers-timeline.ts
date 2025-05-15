@@ -11,6 +11,7 @@ import { Brackets } from 'typeorm';
 import { generateRepliesQuery } from '../../common/generate-replies-query';
 import { injectPromo } from '../../common/inject-promo';
 import { injectFeatured } from '../../common/inject-featured';
+import { generateSuspendedUserQueryForNote } from '../../common/generate-suspended-query';
 
 export const meta = {
 	desc: {
@@ -122,11 +123,16 @@ export default define(meta, async (ps, user) => {
 			if (hasFollowing) qb.orWhere(`note.userId IN (${ followersQuery.getQuery() })`);
 		}))
 		.leftJoinAndSelect('note.user', 'user')
+		.leftJoinAndSelect('note.reply', 'reply')
+		.leftJoinAndSelect('note.renote', 'renote')
+		.leftJoinAndSelect('reply.user', 'replyUser')
+		.leftJoinAndSelect('renote.user', 'renoteUser')
 		.setParameters(followersQuery.getParameters());
 
 	generateRepliesQuery(query, user);
 	generateVisibilityQuery(query, user);
 
+	generateSuspendedUserQueryForNote(query);
 	generateMutedUserQuery(query, user);
 	generateMutedNoteQuery(query, user);
 

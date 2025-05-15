@@ -9,6 +9,7 @@ import { activeUsersChart } from '../../../../services/chart';
 import { Brackets } from 'typeorm';
 import { generateMutedUserQuery } from '../../common/generate-muted-user-query';
 import { generateMutedNoteQuery } from '../../common/generate-muted-note-query';
+import { generateSuspendedUserQueryForNote } from '../../common/generate-suspended-query';
 
 export const meta = {
 	desc: {
@@ -133,9 +134,14 @@ export default define(meta, async (ps, user) => {
 	const query = makePaginationQuery(Notes.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 		.andWhere(`note.userId IN (${ listQuery.getQuery() })`)
 		.leftJoinAndSelect('note.user', 'user')
+		.leftJoinAndSelect('note.reply', 'reply')
+		.leftJoinAndSelect('note.renote', 'renote')
+		.leftJoinAndSelect('reply.user', 'replyUser')
+		.leftJoinAndSelect('renote.user', 'renoteUser')
 		.setParameters(listQuery.getParameters());
 
 	generateVisibilityQuery(query, user);
+	generateSuspendedUserQueryForNote(query);
 	generateMutedUserQuery(query, user);
 	generateMutedNoteQuery(query, user);
 
