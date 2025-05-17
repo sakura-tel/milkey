@@ -4,6 +4,7 @@ import define from '../../define';
 import { NoteReactions, UserProfiles } from '../../../../models/index';
 import { makePaginationQuery } from '../../common/make-pagination-query';
 import { generateVisibilityQuery } from '../../common/generate-visibility-query';
+import { generateSuspendedUserQueryForNote } from '../../common/generate-suspended-query';
 import { ApiError } from '../../error';
 
 export const meta = {
@@ -68,9 +69,15 @@ export default define(meta, async (ps, me) => {
 	const query = makePaginationQuery(NoteReactions.createQueryBuilder('reaction'),
 			ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
 		.andWhere(`reaction.userId = :userId`, { userId: ps.userId })
-		.leftJoinAndSelect('reaction.note', 'note');
+		.leftJoinAndSelect('reaction.note', 'note')
+		.leftJoinAndSelect('note.user', 'user')
+		.leftJoinAndSelect('note.reply', 'reply')
+		.leftJoinAndSelect('note.renote', 'renote')
+		.leftJoinAndSelect('reply.user', 'replyUser')
+		.leftJoinAndSelect('renote.user', 'renoteUser');
 
 	generateVisibilityQuery(query, me);
+	generateSuspendedUserQueryForNote(query);
 
 	const reactions = await query
 		.take(ps.limit!)
