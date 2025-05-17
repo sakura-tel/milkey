@@ -27,6 +27,7 @@ export default class extends Channel {
 		if (note.visibility !== 'public' || !note.user.isCat) {
 			return;
 		}
+		if (note.channelId != null) return;
 		// リプライなら再pack
 		if (note.replyId != null) {
 			note.reply = await Notes.pack(note.replyId, this.user, {
