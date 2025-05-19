@@ -130,12 +130,14 @@ export default define(meta, async (ps, user) => {
 		userId: user.id
 	});
 
-	// Notify
-	createNotification(note.userId, 'pollVote', {
-		notifierId: user.id,
-		noteId: note.id,
-		choice: ps.choice
-	});
+	// Notify if Author is LocalUser
+	if (note.userHost === null) {
+		createNotification(note.userId, 'pollVote', {
+			notifierId: user.id,
+			noteId: note.id,
+			choice: ps.choice
+		});
+	}
 
 	// Fetch watchers
 	NoteWatchings.find({
