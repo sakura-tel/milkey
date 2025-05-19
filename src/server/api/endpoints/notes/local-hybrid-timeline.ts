@@ -14,6 +14,7 @@ import { injectPromo } from '../../common/inject-promo';
 import { injectFeatured } from '../../common/inject-featured';
 import { generateMutedNoteQuery } from '../../common/generate-muted-note-query';
 import { generateChannelQuery } from '../../common/generate-channel-query';
+import { generateSuspendedUserQueryForNote } from '../../common/generate-suspended-query';
 
 export const meta = {
 	desc: {
@@ -131,11 +132,16 @@ export default define(meta, async (ps, user) => {
 		}))
 		.andWhere('note.userHost IS NULL')
 		.leftJoinAndSelect('note.user', 'user')
+		.leftJoinAndSelect('note.reply', 'reply')
+		.leftJoinAndSelect('note.renote', 'renote')
+		.leftJoinAndSelect('reply.user', 'replyUser')
+		.leftJoinAndSelect('renote.user', 'renoteUser')
 		.setParameters(followingQuery.getParameters());
 
 	generateChannelQuery(query, user);
 	generateRepliesQuery(query, user);
 	generateVisibilityQuery(query, user);
+	generateSuspendedUserQueryForNote(query);
 	generateMutedUserQuery(query, user);
 	generateMutedNoteQuery(query, user);
 

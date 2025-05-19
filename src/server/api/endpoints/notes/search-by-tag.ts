@@ -4,6 +4,7 @@ import define from '../../define';
 import { makePaginationQuery } from '../../common/make-pagination-query';
 import { Notes } from '../../../../models';
 import { generateMutedUserQuery } from '../../common/generate-muted-user-query';
+import { generateSuspendedUserQueryForNote } from '../../common/generate-suspended-query';
 import { generateVisibilityQuery } from '../../common/generate-visibility-query';
 import { Brackets } from 'typeorm';
 import { safeForSql } from '../../../../misc/safe-for-sql';
@@ -95,9 +96,14 @@ export const meta = {
 
 export default define(meta, async (ps, me) => {
 	const query = makePaginationQuery(Notes.createQueryBuilder('note'), ps.sinceId, ps.untilId)
-		.leftJoinAndSelect('note.user', 'user');
+		.leftJoinAndSelect('note.user', 'user')
+		.leftJoinAndSelect('note.reply', 'reply')
+		.leftJoinAndSelect('note.renote', 'renote')
+		.leftJoinAndSelect('reply.user', 'replyUser')
+		.leftJoinAndSelect('renote.user', 'renoteUser');
 
 	generateVisibilityQuery(query, me);
+	generateSuspendedUserQueryForNote(query);
 	if (me) generateMutedUserQuery(query, me);
 
 	if (ps.tag) {

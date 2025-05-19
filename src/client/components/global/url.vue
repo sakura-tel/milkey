@@ -57,6 +57,7 @@ export default defineComponent({
 			hideTimer: null,
 			checkTimer: null,
 			close: null,
+			maybeRelativeUrl: maybeRelativeUrl,
 			faExternalLinkSquareAlt
 		};
 	},
