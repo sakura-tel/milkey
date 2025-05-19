@@ -190,7 +190,7 @@ export async function createPerson(uri: string, resolver?: Resolver): Promise<Us
 	if (urlUrl != null && urlUrl.protocol != 'https:') {
 		throw new Error(`unexpected schema of person url: ${url}`);
 	}
-	
+
 	if (urlUrl != null && urlUrl.host != uriUrl.host) {
 		logger.debug("Person url host doesn't match person uri host, clearing variable");
 		url = undefined;
@@ -392,7 +392,7 @@ export async function updatePerson(uri: string, resolver?: Resolver | null, hint
 		inbox: person.inbox,
 		sharedInbox: person.sharedInbox || (person.endpoints ? person.endpoints.sharedInbox : undefined),
 		followersUri: person.followers ? getApId(person.followers) : undefined,
-		featured: person.featured,
+		featured: person.featured ? getApId(person.featured) : undefined,
 		emojis: emojiNames,
 		name: person.name,
 		tags,
