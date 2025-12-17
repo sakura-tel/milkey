@@ -107,4 +107,4 @@ gulp.task('build', gulp.parallel(
 	'build:client',
 ));
 
-gulp.task('default', gulp.task('build'));
+gulp.task('default', gulp.series('build'));
