@@ -70,7 +70,7 @@ export class Page {
 	public eyeCatchingImageId: DriveFile['id'] | null;
 
 	@ManyToOne(type => DriveFile, {
-		onDelete: 'CASCADE'
+		onDelete: 'SET NULL'
 	})
 	@JoinColumn()
 	public eyeCatchingImage: DriveFile | null;
