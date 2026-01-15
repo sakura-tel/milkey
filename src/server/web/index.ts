@@ -421,6 +421,26 @@ router.get('/othello', async ctx => ctx.redirect(override(ctx.URL.pathname, 'gam
 router.get('/reversi', async ctx => ctx.redirect(override(ctx.URL.pathname, 'games')));
 
 router.get('/flush', async ctx => {
+	const configUrl = new URL(config.url);
+	let sendHeader = true;
+
+	const origin = ctx.headers['origin'];
+  if (origin) {
+    const originURL = new URL(origin);
+    if (originURL.protocol !== 'https:') { // Clear-Site-Data only supports https
+      sendHeader = false;
+    }
+    if (originURL.host !== configUrl.host) {
+      sendHeader = false;
+    }
+  }
+
+  if (sendHeader) {
+    ctx.set('Clear-Site-Data', '"*"');
+  }
+
+  ctx.set('Set-Cookie', 'http-flush-failed=1; Path=/flush; Max-Age=60');
+
 	await ctx.render('flush');
 });
 

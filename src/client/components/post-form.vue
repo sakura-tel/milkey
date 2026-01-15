@@ -335,7 +335,13 @@ export default defineComponent({
 
 		// 公開以外へのリプライ時は元の公開範囲を引き継ぐ
 		if (this.reply && ['home', 'followers', 'specified'].includes(this.reply.visibility)) {
-			this.visibility = this.reply.visibility;
+			if (this.reply.visibility === 'home' && this.visibility === 'followers') {
+				this.visibility = 'followers'; // もともと公開範囲がフォロワーのみならホームには上げない
+			} else if (['home', 'followers'].includes(this.reply.visibility) && this.visibility === 'specified') {
+				this.visibility = 'specified'; // もともと公開範囲がダイレクトならホームもしくはフォロワーのみには上げない
+			} else {
+				this.visibility = this.reply.visibility;
+			}
 			if (this.reply.visibility === 'specified') {
 				os.api('users/show', {
 					userIds: this.reply.visibleUserIds.filter(uid => uid !== this.$i.id && uid !== this.reply.userId)

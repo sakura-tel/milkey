@@ -1,5 +1,5 @@
 import autobind from 'autobind-decorator';
-import * as websocket from 'websocket';
+import { WebSocket } from 'ws';
 import { readNotification } from '../common/read-notification';
 import call from '../call';
 import readNote from '../../../services/note/read';
@@ -12,11 +12,16 @@ import { Users, Followings, Mutings, UserProfiles, ChannelFollowings } from '../
 import { ApiError } from '../error';
 import { AccessToken } from '../../../models/entities/access-token';
 import { UserProfile } from '../../../models/entities/user-profile';
+import Logger from '../../../services/logger';
+
+const logger = new Logger('streaming');
+
+const MAX_CHANNELS_PER_CONNECTION = 32;
 
 /**
  * Main stream connection
  */
-export default class Connection {
+export class Connection {
 	public user?: User;
 	public userProfile?: UserProfile;
 	public following: Set<User['id']> = new Set();
@@ -24,7 +29,7 @@ export default class Connection {
 	public renoteMuting: Set<User['id']> = new Set();
 	public followingChannels: Set<ChannelModel['id']> = new Set();
 	public token?: AccessToken;
-	private wsConnection: websocket.connection;
+	private socket: WebSocket;
 	public subscriber: EventEmitter;
 	private channels: Channel[] = [];
 	private subscribingNotes: any = {};
@@ -35,17 +40,17 @@ export default class Connection {
 	private userProfileClock: NodeJS.Timer;
 
 	constructor(
-		wsConnection: websocket.connection,
+		socket: WebSocket,
 		subscriber: EventEmitter,
 		user: User | null | undefined,
 		token: AccessToken | null | undefined
 	) {
-		this.wsConnection = wsConnection;
+		this.socket = socket;
 		this.subscriber = subscriber;
 		if (user) this.user = user;
 		if (token) this.token = token;
 
-		this.wsConnection.on('message', this.onWsConnectionMessage);
+		this.socket.on('message', this.onMessage);
 
 		this.subscriber.on('broadcast', async ({ type, body }) => {
 			this.onBroadcastMessage(type, body);
@@ -73,15 +78,15 @@ export default class Connection {
 	 * クライアントからメッセージ受信時
 	 */
 	@autobind
-	private async onWsConnectionMessage(data: websocket.IMessage) {
-		if (data.utf8Data == null) return;
+	private async onMessage(data: WebSocket.RawData, isRaw: boolean) {
+		if (data.isRaw) return;
 
 		let obj: Record<string, any>;
 
 		try {
-			obj = JSON.parse(data.utf8Data);
-		} catch (e) {
-			return;
+			obj = JSON.parse(data);
+		} catch (err) {
+			logger.error(err);
 		}
 
 		const { type, body } = obj;
@@ -206,7 +211,7 @@ export default class Connection {
 	 */
 	@autobind
 	public sendMessageToWs(type: string, payload: any) {
-		this.wsConnection.send(JSON.stringify({
+		this.socket.send(JSON.stringify({
 			type: type,
 			body: payload
 		}));
@@ -217,6 +222,10 @@ export default class Connection {
 	 */
 	@autobind
 	public connectChannel(id: string, params: any, channel: string, pong = false) {
+		if (this.channels.length >= MAX_CHANNELS_PER_CONNECTION) {
+			return;
+		}
+
 		if ((channels as any)[channel].requireCredential && this.user == null) {
 			return;
 		}

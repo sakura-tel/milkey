@@ -1,5 +1,5 @@
 import * as Koa from 'koa';
-import summaly from 'summaly';
+import { summaly } from '@misskey-dev/summaly';
 import { fetchMeta } from '../../misc/fetch-meta';
 import Logger from '../../services/logger';
 import config from '../../config';
@@ -7,6 +7,7 @@ import { query } from '../../prelude/url';
 import { getJson } from '../../misc/fetch';
 import { URL } from 'url';
 import { sanitizeUrl } from '../../misc/sanitize-url';
+import { httpAgent, httpsAgent } from '../../misc/fetch';
 
 const logger = new Logger('url-preview');
 
@@ -54,7 +55,11 @@ module.exports = async (ctx: Koa.Context) => {
 			lang: ctx.query.lang || 'ja-JP'
 		})}`) : await summaly(ctx.query.url, {
 			followRedirects: false,
-			lang: ctx.query.lang || 'ja-JP'
+			lang: ctx.query.lang || 'ja-JP',
+			agent: config.proxy ? {
+				http: httpAgent,
+				https: httpsAgent,
+			} : undefined,
 		});
 
 		logger.succ(`Got preview of ${ctx.query.url}: ${summary.title}`);

@@ -498,7 +498,13 @@ export default defineComponent({
 
 			// public以外へのリプライ時は元の公開範囲を引き継ぐ
 			if (props.reply && ['home', 'followers', 'specified'].includes(props.reply.visibility)) {
-				visibility.value = props.reply.visibility;
+				if (props.reply.visibility === 'home' && visibility.value === 'followers') {
+					visibility.value = 'followers'; // もともと公開範囲がフォロワーのみならホームには上げない
+				} else if (['home', 'followers'].includes(props.reply.visibility) && visibility.value === 'specified') {
+					visibility.value = 'specified'; // もともと公開範囲がダイレクトならホームもしくはフォロワーのみには上げない
+				} else {
+					visibility.value = props.reply.visibility;
+				}
 				if (props.reply.visibility === 'specified') {
 					api('users/show', {
 						userIds: props.reply.visibleUserIds.filter(uid => uid !== $i!.id && uid !== props.reply!.userId)
