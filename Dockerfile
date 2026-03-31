@@ -1,4 +1,4 @@
-FROM node:20.20.0-bookworm AS builder
+FROM node:20.20.2-bookworm AS builder
 
 ENV NODE_ENV=production
 WORKDIR /misskey
@@ -12,7 +12,7 @@ COPY . ./
 RUN yarn build
 
 
-FROM node:20.20.0-bookworm-slim AS runner
+FROM node:20.20.2-bookworm-slim AS runner
 
 WORKDIR /misskey
 

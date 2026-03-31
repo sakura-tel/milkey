@@ -8,7 +8,7 @@ import channels from './channels';
 import { EventEmitter } from 'events';
 import { User } from '../../../models/entities/user';
 import { Channel as ChannelModel } from '../../../models/entities/channel';
-import { Users, Followings, Mutings, UserProfiles, ChannelFollowings } from '../../../models';
+import { Users, Followings, Mutings, UserProfiles, ChannelFollowings, Notes } from '../../../models';
 import { ApiError } from '../error';
 import { AccessToken } from '../../../models/entities/access-token';
 import { UserProfile } from '../../../models/entities/user-profile';
@@ -147,8 +147,16 @@ export class Connection {
 	 * 投稿購読要求時
 	 */
 	@autobind
-	private onSubscribeNote(payload: any, read: boolean) {
+	private async onSubscribeNote(payload: any, read: boolean) {
 		if (!payload.id) return;
+
+		const packed = await Notes.pack(payload.id, this.user, {
+			detail: true,
+		});
+
+		if (packed?.isHidden) {
+			return;
+		}
 
 		if (this.subscribingNotes[payload.id] == null) {
 			this.subscribingNotes[payload.id] = 0;
