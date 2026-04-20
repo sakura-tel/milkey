@@ -7,7 +7,7 @@ import { Instances } from '../../models';
 import { instanceChart } from '../../services/chart';
 import { fetchMeta } from '../../misc/fetch-meta';
 import { toPuny, extractDbHost } from '../../misc/convert-host';
-import { getApId } from '../../remote/activitypub/type';
+import { getApId, isActor, isDelete } from '../../remote/activitypub/type';
 import { fetchInstanceMetadata } from '../../services/fetch-instance-metadata';
 import { InboxJobData } from '..';
 import DbResolver from '../../remote/activitypub/db-resolver';
@@ -43,6 +43,23 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 	}
 
 	const dbResolver = new DbResolver();
+
+	{
+		let userExistenceCheckApId: string | null = null;
+
+		// 存在しないActorに対するActorのDeleteアクティビティは無視する。
+		// actorとobjectが同じならばそれはActorに違いない
+		if (isDelete(activity) && typeof activity.object === 'object' && (isActor(activity.object) || getApId(activity.actor) === getApId(activity.object))) {
+			userExistenceCheckApId = getApId(activity.object);
+		}
+
+		if (userExistenceCheckApId != null) {
+			const user = await dbResolver.getUserFromApId(userExistenceCheckApId);
+			if (user == null) {
+				return `skip: user not found for delete activity. ${getApId(userExistenceCheckApId)}`;
+			}
+		}
+	}
 
 	// HTTP-Signature keyIdを元にDBから取得
 	let authUser = await dbResolver.getAuthUserFromKeyId(signature.keyId);
