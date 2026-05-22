@@ -95,12 +95,22 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 
 			// LD-Signature検証
 			const ldSignature = new LdSignature();
-			const verified = await ldSignature.verifyRsaSignature2017(activity, authUser.key.keyPem).catch(() => false);
+			const signature = activity.signature;
+			delete activity["signature"];
+			activity = await ldSignature.compactToWellKnown(activity);
+
+			if (ldSignature.containsForbiddenDirectives(activity)) {
+				return "skip: activity contains forbidden directives";
+			}
+
+			const verified = await ldSignature.verifyRsaSignature2017(
+				activity,
+				signature,
+				authUser.key.keyPem,
+			);
 			if (!verified) {
 				return `skip: LD-Signatureの検証に失敗しました`;
 			}
-
-			activity = await ldSignature.compactToWellKnown(activity);
 
 			// もう一度actorチェック
 			if (authUser.user.uri !== activity.actor) {
