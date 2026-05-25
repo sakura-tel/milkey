@@ -8,7 +8,10 @@ import { extractDbHost } from '../../../../misc/convert-host';
 import { fetchMeta } from '../../../../misc/fetch-meta';
 import { getApLock } from '../../../../misc/app-lock';
 import { parseAudience } from '../../audience';
+import { isRelayActor } from '../../../../services/relay';
+import { publishNotesStream } from '../../../../services/stream';
 import { StatusError } from '../../../../misc/fetch';
+import { Notes } from '../../../../models';
 
 const logger = apLogger;
 
@@ -16,18 +19,21 @@ const logger = apLogger;
  * アナウンスアクティビティを捌きます
  */
 export default async function(resolver: Resolver, actor: IRemoteUser, activity: IAnnounce, targetUri: string): Promise<void> {
-	const uri = getApId(activity);
-
 	// アナウンサーが凍結されていたらスキップ
 	if (actor.isSuspended) {
 		return;
 	}
 
+	// リレーからのAnnounceかチェック
+	const fromRelay = await isRelayActor(actor);
+	const uri = getApId(fromRelay ? target : activity);
+
 	// アナウンス先をブロックしてたら中断
 	const meta = await fetchMeta();
 	if (meta.blockedHosts.includes(extractDbHost(uri))) return;
 
-	const unlock = await getApLock(uri);
+	const activityUri = getApId(activity);
+	const unlock = await getApLock(activityUri);
 
 	try {
 		// 既に同じURIを持つものが登録されていないかチェック
@@ -48,6 +54,14 @@ export default async function(resolver: Resolver, actor: IRemoteUser, activity: 
 			}
 			logger.warn(`Error in announce target ${targetUri} - ${e.statusCode || e}`);
 			throw e;
+		}
+
+		// リレーからのAnnounceはリノートを作成せず、ノートを直接公開する
+		if (fromRelay) {
+			logger.info(`Publishing relay-delivered note: ${uri}`);
+			const noteObj = await Notes.pack(renote, null, { skipHide: true });
+			publishNotesStream(noteObj);
+			return;
 		}
 
 		logger.info(`Creating the (Re)Note: ${uri}`);

@@ -75,6 +75,16 @@ export async function relayRejected(id: string) {
 	return JSON.stringify(result);
 }
 
+export async function isRelayActor(actor: { inbox: string | null; sharedInbox: string | null }): Promise<boolean> {
+	const relays = await Relays.find({
+		status: 'accepted',
+	});
+	return relays.some(relay =>
+		(actor.inbox != null && relay.inbox === actor.inbox)
+		|| (actor.sharedInbox != null && relay.inbox === actor.sharedInbox),
+	);
+}
+
 export async function deliverToRelays(user: ILocalUser, activity: any) {
 	if (activity == null) return;
 
