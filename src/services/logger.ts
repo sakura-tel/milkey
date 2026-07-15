@@ -28,7 +28,7 @@ export default class Logger {
 
 		if (config.syslog) {
 			this.syslogClient = new SyslogPro.RFC5424({
-				applacationName: 'Groundpolis',
+				applicationName: 'Groundpolis',
 				timestamp: true,
 				encludeStructuredData: true,
 				color: true,
