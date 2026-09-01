@@ -458,7 +458,7 @@ export default defineComponent({
 				const ast = mfm.parse(this.text);
 
 				for (const x of extractMentions(ast)) {
-					if (!this.visibleUsers.some(u => (u.username === x.username) && (u.host == x.host))) {
+					if (!this.visibleUsers.some(u => (u.username === x.username) && ((u.host === x.host) || (x.host === host && u.host == null)))) {
 						this.hasNotSpecifiedMentions = true;
 						return;
 					}
