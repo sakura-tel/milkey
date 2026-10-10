@@ -9,7 +9,7 @@ import { deliver } from '../../../../../queue';
 import { renderActivity } from '../../../../../remote/activitypub/renderer';
 import renderVote from '../../../../../remote/activitypub/renderer/vote';
 import { deliverQuestionUpdate } from '../../../../../services/note/polls/update';
-import { PollVotes, NoteWatchings, Users, Polls } from '../../../../../models';
+import { PollVotes, NoteWatchings, Users, Polls, Notes } from '../../../../../models';
 import { Not } from 'typeorm';
 import { IRemoteUser } from '../../../../../models/entities/user';
 import { genId } from '../../../../../misc/gen-id';
@@ -82,6 +82,11 @@ export default define(meta, async (ps, user) => {
 		if (e.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
 		throw e;
 	});
+
+	// check visibility
+	if (!(await Notes.isVisibleForMe(note, user.id))) {
+		throw new ApiError(meta.errors.noSuchNote);
+	}
 
 	if (!note.hasPoll) {
 		throw new ApiError(meta.errors.noPoll);

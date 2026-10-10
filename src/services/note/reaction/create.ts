@@ -17,6 +17,10 @@ export default async (user: User, note: Note, reaction?: string, isDislike = fal
 	if (note.renoteId && note.text == null && note.poll == null && note.fileIds.length == 0) {
 		throw new IdentifiableError('12c35529-3c79-4327-b1cc-e2cf63a71925');
 	}
+	// check visibility
+	if (!await Notes.isVisibleForMe(note, user.id)) {
+		throw new IdentifiableError('68e9d2d1-48bf-42c2-b90a-b20e09fd3d48', 'Note not accessible for you.');
+	}
 	const dbReaction = await toDbReaction(reaction, user.host);
 	reaction = dbReaction ? dbReaction : await getFallbackReaction();
 	const isFallback = !dbReaction;

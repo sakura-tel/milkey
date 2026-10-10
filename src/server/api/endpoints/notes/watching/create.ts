@@ -51,6 +51,7 @@ export default define(meta, async (ps, user) => {
 		await watch(user.id, note);
 	} catch (e) {
 		if (e.id === 'ca181079-4b1b-aaa3-779b-9d50ae23c8d1') throw new ApiError(meta.errors.alreadyWatching);
+		if (e.id === '68e9d2d1-48bf-42c2-b90a-b20e09fd3d48') throw new ApiError(meta.errors.noSuchNote);
 		throw e;
 	};
 });

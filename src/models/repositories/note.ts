@@ -22,6 +22,59 @@ export class NoteRepository extends Repository<Note> {
 		return x.trim().length <= 100;
 	}
 
+	public async isVisibleForMe(note: Note, meId: User['id'] | null): Promise<boolean> {
+		// This code must always be synchronized with the checks in generateVisibilityQuery.
+		// visibility が specified かつ自分が指定されていなかったら非表示
+		if (note.visibility === 'specified') {
+			if (meId == null) {
+				return false;
+			} else if (meId === note.userId) {
+				return true;
+			} else {
+				// 指定されているかどうか
+				return note.visibleUserIds.some((id: any) => meId === id);
+			}
+		}
+
+		// visibility が followers かつ自分が投稿者のフォロワーでなかったら非表示
+		if (note.visibility === 'followers') {
+			if (meId == null) {
+				return false;
+			} else if (meId === note.userId) {
+				return true;
+			} else if (note.replyUserId && (meId === note.replyUserId)) {
+				// 自分の投稿に対するリプライ
+				return true;
+			} else if (note.mentions && note.mentions.some(id => meId === id)) {
+				// 自分へのメンション
+				return true;
+			} else {
+				// フォロワーかどうか
+				const [following, user] = await Promise.all([
+					Followings.count({
+						where: {
+							followeeId: note.userId,
+							followerId: meId,
+						},
+						take: 1,
+					}),
+					Users.findOneOrFail({ id: meId }),
+				]);
+
+				/* If we know the following, everyhting is fine.
+
+				But if we do not know the following, it might be that both the
+				author of the note and the author of the like are remote users,
+				in which case we can never know the following. Instead we have
+				to assume that the users are following each other.
+				*/
+				return following > 0 || (note.userHost != null && user.host != null);
+			}
+		}
+
+		return true;
+	}
+
 	private async hideNote(packedNote: PackedNote, meId: User['id'] | null) {
 		let hide = false;
 
