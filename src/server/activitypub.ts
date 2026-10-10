@@ -159,6 +159,7 @@ async function parseJsonBodyOrFail(ctx: Router.RouterContext, next: Koa.Next) {
 	const koaBodyParser = bodyParser({
 		enableTypes: ["json"],
 		detectJSON: () => true,
+		jsonLimit: '64kb',
 	});
 
 	try {
