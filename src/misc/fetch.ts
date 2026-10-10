@@ -17,7 +17,8 @@ export async function getJson(url: string, accept = 'application/json, */*', tim
 			'User-Agent': config.userAgent,
 			Accept: accept
 		}, headers || {}),
-		timeout
+		timeout,
+		size: 1024 * 256
 	});
 
 	return await res.json();
