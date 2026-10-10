@@ -15,10 +15,10 @@ export const meta = {
 
 	tags: ['admin'],
 
-  requireCredential: true as const,
-	requireModerator: true,
+	requireCredential: true as const,
+	requireAdmin: true,
 
-  params: {
+  	params: {
 		userId: {
 			validator: $.type(ID),
 			desc: {
