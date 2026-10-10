@@ -64,7 +64,14 @@ export default defineComponent({
 			fetch(`https://api.rss2json.com/v1/api.json?rss_url=${this.props.url}`, {
 			}).then(res => {
 				res.json().then(feed => {
-					this.items = feed.items;
+					this.items = feed.items.filter((item: { link: string }) => {
+						try {
+							const url = new URL(item.link);
+							return url.protocol === 'http:' || url.protocol === 'https:';
+						} catch {
+							return null;
+						}
+					});
 					this.fetching = false;
 				});
 			});
