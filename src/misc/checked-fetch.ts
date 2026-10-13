@@ -3,7 +3,7 @@ import * as https from 'https';
 import net from 'net';
 import config from '../config';
 import * as IPCIDR from 'ip-cidr';
-const PrivateIp = require('private-ip');
+import * as ipaddr from 'ipaddr.js';
 
 declare module 'http' {
 	interface Agent {
@@ -12,14 +12,15 @@ declare module 'http' {
 }
 
 function isPrivateIp(ip: string): boolean {
+	const parsedIp = ipaddr.parse(ip);
 	for (const net of config.allowedPrivateNetworks || []) {
-		const cidr = new IPCIDR(net);
-		if (cidr.contains(ip)) {
+		const cidr = ipaddr.parseCIDR(net);
+		if (parsedIp.kind() === cidr[0].kind() && parsedIp.match(cidr)) {
 			return false;
 		}
 	}
 
-	return PrivateIp(ip);
+	return parsedIp.range() !== 'unicast';
 }
 
 function checkConnection(socket: net.Socket) {
