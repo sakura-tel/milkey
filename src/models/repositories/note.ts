@@ -72,6 +72,12 @@ export class NoteRepository extends Repository<Note> {
 			}
 		}
 
+		if (note.visibility === 'users') {
+			if (meId == null) {
+				return false;
+			}
+		}
+
 		return true;
 	}
 
