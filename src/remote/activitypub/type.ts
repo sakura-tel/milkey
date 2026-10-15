@@ -51,6 +51,15 @@ export function getApId(value: string | IObject | undefined): string {
 	throw new Error('cannot determine id');
 }
 
+/**
+ * Get ActivityStreams Object type
+ */
+ export function getApType(value: IObject): string {
+	if (typeof value.type === 'string') return value.type;
+	if (Array.isArray(value.type) && typeof value.type[0] === 'string') return value.type[0];
+	throw new Error('cannot detect type');
+}
+
 export function getOneApHrefNullable(value: ApObject | undefined): string | undefined {
 	const firstOne = Array.isArray(value) ? value[0] : value;
 	return getApHrefNullable(firstOne);
@@ -129,6 +138,9 @@ export const isTombstone = (object: IObject): object is ITombstone =>
 	object.type === 'Tombstone';
 
 export const validActor = ['Person', 'Service', 'Group', 'Organization', 'Application'];
+
+export const isActor = (object: IObject): object is IPerson =>
+	validActor.includes(getApType(object));
 
 export interface IPerson extends IObject {
 	type: 'Person' | 'Service' | 'Organization' | 'Group' | 'Application';
