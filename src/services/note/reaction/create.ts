@@ -11,11 +11,16 @@ import { perUserReactionsChart } from '../../chart';
 import { genId } from '../../../misc/gen-id';
 import { createNotification } from '../../create-notification';
 import deleteReaction from './delete';
+import { isDuplicateKeyValueError } from '../../../misc/is-duplicate-key-value-error';
 import { IdentifiableError } from '../../../misc/identifiable-error';
 
 export default async (user: User, note: Note, reaction?: string, isDislike = false) => {
 	if (note.renoteId && note.text == null && note.poll == null && note.fileIds.length == 0) {
 		throw new IdentifiableError('12c35529-3c79-4327-b1cc-e2cf63a71925');
+	}
+	// check visibility
+	if (!await Notes.isVisibleForMe(note, user.id)) {
+		throw new IdentifiableError('68e9d2d1-48bf-42c2-b90a-b20e09fd3d48', 'Note not accessible for you.');
 	}
 	const dbReaction = await toDbReaction(reaction, user.host);
 	reaction = dbReaction ? dbReaction : await getFallbackReaction();
@@ -31,8 +36,8 @@ export default async (user: User, note: Note, reaction?: string, isDislike = fal
 			// 別のリアクションがすでにされていたら置き換える
 			await deleteReaction(user, note);
 		} else {
-			// 同じリアクションがすでにされていたら何もしない
-			return;
+			// 同じリアクションがすでにされていたらエラー
+			throw new IdentifiableError('51c42bb4-931a-456b-bff7-e5a8a70dd298');
 		}
 	}
 
@@ -44,6 +49,12 @@ export default async (user: User, note: Note, reaction?: string, isDislike = fal
 		userId: user.id,
 		reaction,
 		dislike: isDislike,
+	}).catch(e => {
+		if (isDuplicateKeyValueError(e)) {
+			throw new IdentifiableError('51c42bb4-931a-456b-bff7-e5a8a70dd298');
+		} else {
+			throw e;
+		};
 	});
 
 	// Increment reactions count

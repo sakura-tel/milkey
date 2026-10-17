@@ -69,6 +69,7 @@ export default define(meta, async (ps, user) => {
 	await createReaction(user, note, ps.reaction, !!ps.dislike).catch(e => {
 		if (e.id === '51c42bb4-931a-456b-bff7-e5a8a70dd298') throw new ApiError(meta.errors.alreadyReacted);
 		if (e.id === '12c35529-3c79-4327-b1cc-e2cf63a71925') throw new ApiError(meta.errors.cannotReactToRenote);
+		if (e.id === '68e9d2d1-48bf-42c2-b90a-b20e09fd3d48') throw new ApiError(meta.errors.noSuchNote);
 		throw e;
 	});
 	return;

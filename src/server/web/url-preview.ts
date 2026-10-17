@@ -56,10 +56,10 @@ module.exports = async (ctx: Koa.Context) => {
 		})}`) : await summaly(ctx.query.url, {
 			followRedirects: false,
 			lang: ctx.query.lang || 'ja-JP',
-			agent: config.proxy ? {
+			agent: {
 				http: httpAgent,
 				https: httpsAgent,
-			} : undefined,
+			},
 		});
 
 		logger.succ(`Got preview of ${ctx.query.url}: ${summary.title}`);

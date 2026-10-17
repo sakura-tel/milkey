@@ -34,6 +34,7 @@ import { countSameRenotes } from '../../misc/count-same-renotes';
 import { deliverToRelays } from '../relay';
 import { Channel } from '../../models/entities/channel';
 import { normalizeForSearch } from '../../misc/normalize-for-search';
+import { DB_MAX_NOTE_TEXT_LENGTH } from '../../misc/hard-limits';
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention' | 'users';
 
@@ -138,6 +139,18 @@ export default async (user: User, data: Option, silent = false) => new Promise<N
 	if (data.channel != null) data.visibility = 'public';
 	if (data.channel != null) data.visibleUsers = [];
 	if (data.channel != null) data.localOnly = true;
+
+	// 本文/CW/投票のハードリミット
+	// サロゲートペアは2文字扱い/合字は複数文字扱いでかける
+	if (data.text && data.text.length > DB_MAX_NOTE_TEXT_LENGTH) {
+		throw new Error('text limit exceeded');
+	}
+	if (data.cw && data.cw.length > 512) {
+		throw new Error('cw limit exceeded');
+	}
+	if (data.poll && JSON.stringify(data.poll).length > DB_MAX_NOTE_TEXT_LENGTH) {
+		throw new Error('poll limit exceeded');
+	}
 
 	// サイレンス
 	if (user.isSilenced && data.visibility === 'public' && data.channel == null) {

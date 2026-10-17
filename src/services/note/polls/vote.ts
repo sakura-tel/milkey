@@ -1,10 +1,11 @@
 import { publishNoteStream } from '../../stream';
 import { User } from '../../../models/entities/user';
 import { Note } from '../../../models/entities/note';
-import { PollVotes, NoteWatchings, Polls } from '../../../models';
+import { PollVotes, NoteWatchings, Polls, Notes } from '../../../models';
 import { Not } from 'typeorm';
 import { genId } from '../../../misc/gen-id';
 import { createNotification } from '../../create-notification';
+import { IdentifiableError } from '../../../misc/identifiable-error';
 
 export default async function(user: User, note: Note, choice: number) {
 	const poll = await Polls.findOne(note.id);
@@ -13,6 +14,11 @@ export default async function(user: User, note: Note, choice: number) {
 
 	// Check whether is valid choice
 	if (poll.choices[choice] == null) throw new Error('invalid choice param');
+
+	// check visibility
+	if (!await Notes.isVisibleForMe(note, user.id)) {
+		throw new IdentifiableError('68e9d2d1-48bf-42c2-b90a-b20e09fd3d48', 'Note not accessible for you.');
+	}
 
 	// if already voted
 	const exist = await PollVotes.find({

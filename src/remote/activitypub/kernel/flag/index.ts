@@ -1,4 +1,3 @@
-import * as sanitizeHtml from 'sanitize-html';
 import { IRemoteUser } from '../../../../models/entities/user';
 import config from '../../../../config';
 import { IFlag, getApIds } from '../../type';
@@ -50,18 +49,14 @@ export default async (actor: IRemoteUser, activity: IFlag): Promise<string> => {
 				userId: moderator.id,
 			});
 			if (emailRecipientProfile.email && emailRecipientProfile.emailVerified) {
-				sendEmail(emailRecipientProfile.email, 'New abuse report',
-					sanitizeHtml(report.comment),
-					sanitizeHtml(report.comment));
+				sendEmail(emailRecipientProfile.email, 'New abuse report', report.comment);
 				emailSentCount++;
 			}
 		}
 
 		const meta = await fetchMeta();
 		if (meta.email && meta.maintainerEmail) {
-			sendEmail(meta.maintainerEmail, 'New abuse report',
-				sanitizeHtml(report.comment),
-				sanitizeHtml(report.comment));
+			sendEmail(meta.maintainerEmail, 'New abuse report', report.comment);
 		}
 	}, 1);
 

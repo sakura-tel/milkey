@@ -3,7 +3,7 @@ import { ID } from '../../../../misc/cafy-id';
 import define from '../../define';
 import { getNote } from '../../common/getters';
 import { ApiError } from '../../error';
-import { NoteReactions } from '../../../../models';
+import { NoteReactions, Notes } from '../../../../models';
 import { DeepPartial } from 'typeorm';
 import { NoteReaction } from '../../../../models/entities/note-reaction';
 
@@ -73,6 +73,10 @@ export default define(meta, async (ps, user) => {
 		if (e.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
 		throw e;
 	});
+
+	if (!(await Notes.isVisibleForMe(note, user ? user.id : null))) {
+		throw new ApiError(meta.errors.noSuchNote);
+	}
 
 	const query = {
 		noteId: note.id

@@ -1,5 +1,4 @@
 import $ from 'cafy';
-import * as sanitizeHtml from 'sanitize-html';
 import define from '../../../define';
 import { ID } from '../../../../../misc/cafy-id';
 import { DriveFiles, Emojis, EmojiRequests } from '../../../../../models';
@@ -86,9 +85,7 @@ export default define(meta, async (ps, user) => {
 	setTimeout(async () => {
 		const meta = await fetchMeta();
 		if (meta.email && meta.maintainerEmail) {
-			sendEmail(meta.maintainerEmail, 'New emoji suggestion',
-			sanitizeHtml(ps.description),
-			sanitizeHtml(ps.description));
+			sendEmail(meta.maintainerEmail, 'New emoji suggestion', ps.description);
 		}
 	}, 1);
 });

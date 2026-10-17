@@ -9,7 +9,7 @@ import { httpAgent, httpsAgent } from '../../../misc/fetch';
 export class LdSignature {
 	public debug = false;
 	public preLoad = true;
-	public loderTimeout = 10 * 1000;
+	public loaderTimeout = 10 * 1000;
 
 	constructor() {
 	}
@@ -50,11 +50,11 @@ export class LdSignature {
 		};
 	}
 
-	public async verifyRsaSignature2017(data: any, publicKey: string): Promise<boolean> {
-		const toBeSigned = await this.createVerifyData(data, data.signature);
+	public async verifyRsaSignature2017(data: any, signature: any, publicKey: string): Promise<boolean> {
+		const toBeSigned = await this.createVerifyData(data, signature);
 		const verifier = crypto.createVerify('sha256');
 		verifier.update(toBeSigned);
-		return verifier.verify(publicKey, data.signature.signatureValue, 'base64');
+		return verifier.verify(publicKey, signature.signatureValue, 'base64');
 	}
 
 	public async createVerifyData(data: any, options: any) {
@@ -68,7 +68,6 @@ export class LdSignature {
 		const canonizedOptions = await this.normalize(transformedOptions);
 		const optionsHash = this.sha256(canonizedOptions);
 		const transformedData = { ...data };
-		delete transformedData['signature'];
 		const cannonidedData = await this.normalize(transformedData);
 		if (this.debug) console.debug(`cannonidedData: ${cannonidedData}`);
 		const documentHash = this.sha256(cannonidedData);
@@ -86,7 +85,6 @@ export class LdSignature {
 	public async compactToWellKnown(data: any): Promise<any> {
 		const options = { documentLoader: this.getLoader() };
 		const context = WellKnownContext as any;
-		delete data["signature"];
 		return await jsonld.compact(data, context, options);
 	}
 
@@ -120,7 +118,7 @@ export class LdSignature {
 			headers: {
 				Accept: 'application/ld+json, application/json',
 			},
-			timeout: this.loderTimeout,
+			timeout: this.loaderTimeout,
 			agent: u => u.protocol == 'http:' ? httpAgent : httpsAgent,
 		}).then(res => {
 			if (!res.ok) {
@@ -137,5 +135,30 @@ export class LdSignature {
 		const hash = crypto.createHash('sha256');
 		hash.update(data);
 		return hash.digest('hex');
+	}
+
+	public containsForbiddenDirectives(doc: any): boolean {
+		if (typeof doc === "object" && doc !== null) {
+			if (Array.isArray(doc)) {
+				for (const item of doc) {
+					if (this.containsForbiddenDirectives(item)) {
+						return true;
+					}
+				}
+			} else {
+				for (const [key, value] of Object.entries(doc)) {
+					if (["@included", "@graph", "@reverse"].includes(key)) {
+						return true;
+					}
+
+					if (typeof value === "object" && value !== null) {
+						if (this.containsForbiddenDirectives(value)) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
 	}
 }
